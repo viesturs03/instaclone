@@ -101,6 +101,14 @@ class Photo(db.Model):
 
         return link
 
+    def comment_link(self):
+        link = url_for(
+            endpoint='add-comment',
+            photo_id=self.id,
+        )
+
+        return link
+
     def add_like(self, from_user):
         already_liked = Like.query.filter(
             Like.user_id == from_user.id,
