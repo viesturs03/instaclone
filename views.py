@@ -24,38 +24,55 @@ from exceptions import (
 import forms
 
 
-class UserRegistrationView(MethodView):
+class FormViewMixin:
+    form_class = None
+    template_name = None
+
+    def get_form_class(self):
+        return self.form_class
+
+    def get_form(self):
+        form_class = self.get_form_class()
+
+        form = form_class()
+
+        return form
+
+    def get_template_name(self):
+        return self.template_name
+
     def get(self):
-        form = forms.RegistrationForm()
+        form = self.get_form()
+        template_name = self.get_template_name()
 
         return flask.render_template(
-            template_name_or_list='registration.html',
+            template_name_or_list=template_name,
             form=form,
         )
 
+
+class UserRegistrationView(MethodView, FormViewMixin):
+    form_class = forms.RegistrationForm
+    template_name = 'registration.html'
+
     def post(self):
-        form = forms.RegistrationForm()
+        form = self.get_form()
 
         if form.validate_on_submit():
             form.save()
 
         return flask.render_template(
-            template_name_or_list='registration.html',
+            template_name_or_list=self.get_template_name(),
             form=form,
         )
 
 
-class UserLoginView(MethodView):
-    def get(self):
-        form = forms.LoginForm()
-
-        return flask.render_template(
-            template_name_or_list='login.html',
-            form=form,
-        )
+class UserLoginView(MethodView, FormViewMixin):
+    form_class = forms.LoginForm
+    template_name = 'login.html'
 
     def post(self):
-        form = forms.LoginForm()
+        form = self.get_form()
 
         if form.validate_on_submit():
             try:
@@ -65,26 +82,21 @@ class UserLoginView(MethodView):
                 flask.flash(message=str(exception))
 
         return flask.render_template(
-            template_name_or_list='login.html',
+            template_name_or_list=self.get_template_name(),
             form=form,
         )
 
 
-class UploadPhotoView(MethodView):
+class UploadPhotoView(MethodView, FormViewMixin):
+    form_class = forms.PhotoForm
+    template_name = 'upload_photo.html'
+
     decorators = [
         login_required,
     ]
 
-    def get(self):
-        form = forms.PhotoForm()
-
-        return flask.render_template(
-            template_name_or_list='upload_photo.html',
-            form=form,
-        )
-
     def post(self):
-        form = forms.PhotoForm()
+        form = self.get_form()
 
         if form.validate_on_submit():
             photo = form.save()
@@ -95,7 +107,7 @@ class UploadPhotoView(MethodView):
             return response
 
         return flask.render_template(
-            template_name_or_list='upload_photo.html',
+            template_name_or_list=self.get_template_name(),
             form=form,
         )
 
