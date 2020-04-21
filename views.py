@@ -1,6 +1,3 @@
-import time
-import hashlib
-
 import flask
 
 from flask.views import MethodView
@@ -10,10 +7,7 @@ from flask_login import (
     current_user,
 )
 
-
 from werkzeug.exceptions import BadRequest
-
-from werkzeug.utils import secure_filename
 
 from database import db
 
@@ -68,7 +62,7 @@ class UserLoginView(MethodView):
                 form.login()
 
             except LoginException as exception:
-                return str(exception)
+                flask.flash(message=str(exception))
 
         return flask.render_template(
             template_name_or_list='login.html',
@@ -82,33 +76,28 @@ class UploadPhotoView(MethodView):
     ]
 
     def get(self):
-        return flask.render_template('upload_photo.html')
+        form = forms.PhotoForm()
 
-    def post(self):
-        photo_file = flask.request.files['photo']
-
-        file_name_parts = photo_file.filename.split('.')
-        extension = file_name_parts[-1]
-
-        secure_original_file_name = secure_filename(photo_file.filename) + str(time.time())
-        secure_original_file_name = hashlib.sha256(secure_original_file_name.encode('utf-8')).hexdigest()
-
-        file_name = flask.current_app.config['UPLOADS_DIRECTORY'] / secure_original_file_name
-
-        photo_file.save(f'{file_name}.{extension}')
-
-        photo = Photo(
-            path=f'{secure_original_file_name}.{extension}',
-            user_id=current_user.id,
+        return flask.render_template(
+            template_name_or_list='upload_photo.html',
+            form=form,
         )
 
-        db.session.add(photo)
-        db.session.commit()
+    def post(self):
+        form = forms.PhotoForm()
 
-        photo_link = photo.photo_link()
-        response = flask.redirect(location=photo_link)
+        if form.validate_on_submit():
+            photo = form.save()
 
-        return response
+            photo_link = photo.photo_link()
+            response = flask.redirect(location=photo_link)
+
+            return response
+
+        return flask.render_template(
+            template_name_or_list='upload_photo.html',
+            form=form,
+        )
 
 
 class ViewFile(MethodView):
