@@ -1,1 +1,1 @@
-web: cd source && gunicorn instagram.wsgi:application
+web: cd source && gunicorn instaclone.wsgi:application
