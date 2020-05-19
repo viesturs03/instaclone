@@ -1,0 +1,1 @@
+web: cd source && gunicorn instagram.wsgi:application
